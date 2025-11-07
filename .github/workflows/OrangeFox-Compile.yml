@@ -1,4 +1,4 @@
-# 文件名: OrangeFox - Build.yml
+# 文件名: .github/workflows/OrangeFox-Compile.yml
 
 # 名称: OrangeFox 恢复模式构建 (OrangeFox - Build)
 name: OrangeFox - Build
@@ -21,21 +21,21 @@ on:
         options:
         - 12.1
       DEVICE_TREE:
-        description: 'OrangeFox 设备树仓库 (已预设为 oplus_13-orangefox_cn)'
+        description: 'OrangeFox 设备树仓库 (已预设为您的项目)'
         required: true
         default: 'https://github.com/3431018930/oplus_13-orangefox_cn'
       DEVICE_TREE_BRANCH:
-        description: 'OrangeFox 设备树分支 (请按实际情况填写)'
+        description: 'OrangeFox 设备树分支'
         required: true
-        default: 'android-13.0'
+        default: 'android-13.0' # 建议使用您仓库中的实际分支名
       DEVICE_PATH:
-        description: '指定您的设备路径 (一加 13 推测为 device/oplus/bambool)'
+        description: '指定您的设备路径 (一加 13 代号 PJZ110)'
         required: true
-        default: 'device/oplus/bambool' # <--- 针对一加 13 的预设值
+        default: 'device/oplus/PJZ110' # 根据您的仓库结构修正
       DEVICE_NAME:
-        description: '指定您的设备代号 (一加 13 推测为 bambool)'
+        description: '指定您的设备代号 (一加 13 代号 PJZ110)'
         required: true
-        default: 'bambool' # <--- 针对一加 13 的预设值
+        default: 'PJZ110' # 根据您的仓库文件修正
       BUILD_TARGET:
         description: '指定您的构建目标'
         required: true
@@ -69,32 +69,32 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: 🚀 检出代码
+    - name: 🚀 检出代码 (Checkout)
       uses: actions/checkout@v5
               
-    - name: 🧹 清理环境
+    - name: 🧹 清理环境 (Clean-up)
       uses: rokibhasansagar/slimhub_actions@main
 
-    - name: 💽 设置 Swap 空间
+    - name: 💽 设置 Swap 空间 (Swap Space)
       uses: pierotofy/set-swap-space@master
       with:
         swap-size-gb: 12
       
-    - name: ⚙️ 配置构建环境
+    - name: ⚙️ 配置构建环境 (Build Environment)
       run: |
         sudo apt install aria2 -y
         git clone https://gitlab.com/OrangeFox/misc/scripts.git -b master
         cd scripts
         sudo bash setup/android_build_env.sh
 
-    - name: 💾 设置 ccache 缓存
+    - name: 💾 设置 ccache 缓存 (Setup ccache)
       uses: hendrikmuhs/ccache-action@v1.2
       if: inputs.USE_CCACHE
       with:
         max-size: "10G"
         key: ${{ runner.os }}-orangefox-${{ inputs.MANIFEST_BRANCH }}
       
-    - name: 📥 设置 OrangeFox 清单
+    - name: 📥 设置 OrangeFox 清单 (Set-up Manifest)
       if: inputs.MANIFEST_BRANCH == '12.1'
       run: |
         mkdir -p ${GITHUB_WORKSPACE}/OrangeFox
@@ -105,7 +105,7 @@ jobs:
         cd sync
         ./orangefox_sync.sh --branch ${{ inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
 
-    - name: 🔗 克隆 Android13+ 依赖 (针对 12.1 分支)
+    - name: 🔗 克隆 Android13+ 依赖 (针对 12.1 分支) (Clone Dependencies)
       if: inputs.MANIFEST_BRANCH == '12.1'
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
@@ -117,32 +117,32 @@ jobs:
         repo sync
         mv ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery-ofrp ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery
 
-    - name: 🩹 修补源代码
+    - name: 🩹 修补源代码 (Patching the Source Code)
       if: inputs.MANIFEST_BRANCH == '12.1'
       run: |
         echo "跳过默认的源码补丁，依赖设备树自行处理。"
 
-    - name: 🌲 克隆设备树
+    - name: 🌲 克隆设备树 (Clone Device Tree)
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
         git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.DEVICE_PATH }}
         cd ${{ inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-    - name: ⚡️ 更新内置 Magisk (APK)
+    - name: ⚡️ 更新内置 Magisk (APK) (Update Magisk)
       run: |
         git clone https://github.com/ymdzq/twrp_prebuilt ~/twrp_prebuilt
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/${{ inputs.DEVICE_PATH }}
         if ! grep -q 'FOX_USE_SPECIFIC_MAGISK_ZIP' vendorsetup.sh; then (echo 'export FOX_USE_SPECIFIC_MAGISK_ZIP=~/twrp_prebuilt/Magisk/${{ inputs.MAGISK_VERSION }}.apk'>>vendorsetup.sh && echo "Added FOX_USE_SPECIFIC_MAGISK_ZIP in vendorsetup.sh"); else sed -i 's/.*export FOX_USE_SPECIFIC_MAGISK_ZIP.*/export FOX_USE_SPECIFIC_MAGISK_ZIP=\~\/twrp_prebuilt\/Magisk\/${{ inputs.MAGISK_VERSION }}.apk/' vendorsetup.sh; fi
 
-    - name: 🛠️ 更新内置 magiskboot 工具
+    - name: 🛠️ 更新内置 magiskboot 工具 (Update magiskboot)
       run: |
         git clone https://github.com/magojohnji/magiskboot-linux ~/magiskboot-linux
         cp -f ~/magiskboot-linux/armeabi-v7a/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/prebuilt/arm/magiskboot_updated"
         cp -f ~/magiskboot-linux/arm64-v8a/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/prebuilt/arm64/magiskboot_updated"
-        cp -f ~/magojohnji/magiskboot-linux/x86_64/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/tools/magiskboot"
+        cp -f ~/magiskboot-linux/x86_64/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/tools/magiskboot"
 
-    - name: 🏗️ 构建 OrangeFox
+    - name: 🏗️ 构建 OrangeFox (Building OrangeFox)
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
         set +e
@@ -157,7 +157,7 @@ jobs:
         set -e
         lunch twrp_${{ inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image -j$(nproc --all)
 
-    - name: 🏷️ 设置 Release 属性
+    - name: 🏷️ 设置 Release 属性 (Set Release Properties)
       run: |
         echo "BUILD_DATE=$(TZ=Asia/Shanghai date +%Y%m%d)" >> $GITHUB_ENV
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
@@ -168,7 +168,7 @@ jobs:
         fi
         echo "DEVICE_TREE_URL=${DEVICE_TREE_URL}" >> $GITHUB_ENV
 
-    - name: 📤 上传到 Release
+    - name: 📤 上传到 Release (Upload to Release)
       uses: softprops/action-gh-release@master
       with:
         files: |
