@@ -1,7 +1,8 @@
+
 # 文件名: OrangeFox - Build.yml
 
 # 名称: OrangeFox 恢复模式构建 (OrangeFox - Build)
-Name: OrangeFox - Build
+name: OrangeFox - Build
 
 # 致谢 (Credits to):
 # https://github.com/TeamWin
@@ -14,30 +15,30 @@ on:
   workflow_dispatch:
     inputs:
       MANIFEST_BRANCH:
-        description: 'OrangeFox 清单分支' # 翻译: OrangeFox Manifest Branch
+        description: 'OrangeFox 清单分支 (建议保持默认 12.1)'
         required: true
         default: '12.1'
         type: choice
         options:
         - 12.1
       DEVICE_TREE:
-        description: 'OrangeFox 设备树仓库' # 翻译: OrangeFox Device Tree
+        description: 'OrangeFox 设备树仓库 (已预设为 oplus_13-orangefox_cn)'
         required: true
-        default: 'https://github.com/ymdzq/OFRP-device_xiaomi_mondrian'
+        default: 'https://github.com/3431018930/oplus_13-orangefox_cn' # <--- 修改为您的项目
       DEVICE_TREE_BRANCH:
-        description: 'OrangeFox 设备树分支' # 翻译: OrangeFox Device Tree Branch
+        description: 'OrangeFox 设备树分支 (请按实际情况填写)'
         required: true
-        default: 'fox_12.1-a16'
+        default: 'android-13.0' # <--- 预设为 Android 13 对应的分支
       DEVICE_PATH:
-        description: '指定您的设备路径' # 翻译: Specify your Device Path
+        description: '指定您的设备路径 (例如：device/oneplus/ace)'
         required: true
-        default: 'device/xiaomi/mondrian'
+        default: 'device/oplus/device_codename' # <--- ！！！请手动修改为您设备的真实路径！！！
       DEVICE_NAME:
-        description: '指定您的设备代号' # 翻译: Specify your Device Codename
+        description: '指定您的设备代号 (例如：ace)'
         required: true
-        default: 'mondrian'
+        default: 'device_codename' # <--- ！！！请手动修改为您设备的真实代号！！！
       BUILD_TARGET:
-        description: '指定您的构建目标' # 翻译: Specify your Build Target
+        description: '指定您的构建目标'
         required: true
         default: 'recovery'
         type: choice
@@ -46,7 +47,7 @@ on:
         - recovery
         - vendorboot
       MAGISK_VERSION:
-        description: '指定您使用的 Magisk 版本' # 翻译: Specify your Magisk Version
+        description: '指定您使用的 Magisk 版本'
         required: true
         default: 'Magisk'
         type: choice
@@ -55,14 +56,13 @@ on:
         - MagiskAlpha
         - MagiskDelta
       USE_CCACHE:
-        description: 使用 ccache 进行编译 # 翻译: Use ccache for compilation
+        description: 使用 ccache 进行编译
         type: boolean
         required: true
         default: true
 
 jobs:
   build:
-    # 任务名称: OrangeFox 构建 (执行者：${{ github.actor }})
     name: Build OrangeFox by ${{ github.actor }}
     runs-on: ubuntu-22.04
     env:
@@ -110,7 +110,9 @@ jobs:
       if: inputs.MANIFEST_BRANCH == '12.1'
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
+        # 兼容 Android 13+ 内核的 bootctrl 依赖
         sed -i 's/<project name="android_hardware_qcom_bootctrl" path="hardware\/qcom-caf\/bootctrl" remote="LineageOS" revision="lineage-19.1-caf" \/>/<project name="android_hardware_qcom_bootctrl" path="hardware\/qcom-caf\/bootctrl" remote="LineageOS" revision="lineage-21.0-caf" \/>/g' ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/.repo/manifests/twrp-default.xml
+        # 移除默认的 recovery 仓库，以便使用 OrangeFox 特定的 recovery 仓库
         sed -i '/<project path="bootable\/recovery" name="android_bootable_recovery" remote="TeamWin" revision="android-12.1"\/>/d' ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/.repo/manifests/twrp-default.xml
         mv ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery-ofrp
         repo sync
@@ -119,10 +121,12 @@ jobs:
     - name: Patching the Source Code
       if: inputs.MANIFEST_BRANCH == '12.1'
       run: |
-        cd ${GITHUB_WORKSPACE}
-        git clone https://github.com/ymdzq/scripts of_patch
-        cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery
-        git fetch https://github.com/ymdzq/OrangeFox_Recovery fox_12.1 && git cherry-pick 4f65c9bd..7edc2281
+        # 移除原先针对 xiaomi_mondrian 的特定补丁，因为该项目可能不需要
+        # cd ${GITHUB_WORKSPACE}
+        # git clone https://github.com/ymdzq/scripts of_patch
+        # cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery
+        # git fetch https://github.com/ymdzq/OrangeFox_Recovery fox_12.1 && git cherry-pick 4f65c9bd..7edc2281
+        echo "跳过默认的源码补丁，依赖设备树自行处理。"
 
     - name: Clone Device Tree
       run: |
