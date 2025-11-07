@@ -3,10 +3,15 @@
 # 名称: OrangeFox 恢复模式构建 (OrangeFox - Build)
 name: OrangeFox - Build
 
-# ... (省略 Credits)
+# 致谢 (Credits to):
+# https://github.com/TeamWin
+# https://gitlab.com/OrangeFox
+# https://github.com/azwhikaru for Recovery Builder Template
+# And all Contributors in every repositories I used
 
 on:
-  # ... (省略 inputs)
+  # 触发事件: 手动触发
+  workflow_dispatch:
     inputs:
       MANIFEST_BRANCH:
         description: 'OrangeFox 清单分支 (建议保持默认 12.1)'
@@ -22,15 +27,15 @@ on:
       DEVICE_TREE_BRANCH:
         description: 'OrangeFox 设备树分支 (修正为 main)'
         required: true
-        default: 'main'
+        default: 'main' 
       DEVICE_PATH:
         description: '指定您的设备路径 (一加 13 代号 PJZ110)'
         required: true
-        default: 'device/oplus/PJZ110'
+        default: 'device/oplus/PJZ110' 
       DEVICE_NAME:
         description: '指定您的设备代号 (一加 13 代号 PJZ110)'
         required: true
-        default: 'PJZ110'
+        default: 'PJZ110' 
       BUILD_TARGET:
         description: '指定您的构建目标'
         required: true
@@ -67,7 +72,7 @@ jobs:
     - name: 🚀 检出代码 (Checkout)
       uses: actions/checkout@v5
               
-    - name: 🧹 快速清理核心缓存 (Fast Clean) # <--- 关键修改在此处
+    - name: 🧹 快速清理核心缓存 (Fast Clean) # <-- 替换为手动快速清理
       run: |
         echo "Starting fast manual cleanup..."
         # 强制清理 Docker 容器、网络、镜像和构建缓存，这是最快的空间释放方法
