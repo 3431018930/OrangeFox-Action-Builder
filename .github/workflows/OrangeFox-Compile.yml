@@ -25,7 +25,7 @@ on:
         required: true
         default: 'https://github.com/3431018930/oplus_13-orangefox_cn'
       DEVICE_TREE_BRANCH:
-        description: 'OrangeFox 设备树分支 (修正为 main)'
+        description: 'OrangeFox 设备树分支 (已修正为 main)'
         required: true
         default: 'main' 
       DEVICE_PATH:
@@ -72,16 +72,9 @@ jobs:
     - name: 🚀 检出代码 (Checkout)
       uses: actions/checkout@v5
               
-    - name: 🧹 快速清理核心缓存 (Fast Clean) # <-- 替换为手动快速清理
-      run: |
-        echo "Starting fast manual cleanup..."
-        # 强制清理 Docker 容器、网络、镜像和构建缓存，这是最快的空间释放方法
-        docker system prune -a --force || true
-        # 清理 Apt 包缓存
-        sudo apt-get clean
-        # 清理 Homebrew 缓存
-        rm -rf "$(brew --cache)" || true
-        echo "Cleanup finished."
+    - name: 🧹 清理环境 (Clean-up) # <-- 已还原为最初的外部 Action
+      uses: rokibhasansagar/slimhub_actions@main
+      # 警告：此步骤曾导致卡顿和磁盘空间不足错误。
 
     - name: 💽 设置 Swap 空间 (Swap Space)
       uses: pierotofy/set-swap-space@master
@@ -148,7 +141,7 @@ jobs:
         git clone https://github.com/magojohnji/magiskboot-linux ~/magiskboot-linux
         cp -f ~/magiskboot-linux/armeabi-v7a/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/prebuilt/arm/magiskboot_updated"
         cp -f ~/magiskboot-linux/arm64-v8a/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/prebuilt/arm64/magiskboot_updated"
-        cp -f ~/magiskboot-linux/x86_64/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/tools/magiskboot"
+        cp -f ~/magojohnji/magiskboot-linux/x86_64/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/tools/magiskboot"
 
     - name: 🏗️ 构建 OrangeFox (Building OrangeFox)
       run: |
