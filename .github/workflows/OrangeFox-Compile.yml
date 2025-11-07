@@ -1,4 +1,3 @@
-
 # 文件名: OrangeFox - Build.yml
 
 # 名称: OrangeFox 恢复模式构建 (OrangeFox - Build)
@@ -24,19 +23,19 @@ on:
       DEVICE_TREE:
         description: 'OrangeFox 设备树仓库 (已预设为 oplus_13-orangefox_cn)'
         required: true
-        default: 'https://github.com/3431018930/oplus_13-orangefox_cn' # <--- 修改为您的项目
+        default: 'https://github.com/3431018930/oplus_13-orangefox_cn'
       DEVICE_TREE_BRANCH:
         description: 'OrangeFox 设备树分支 (请按实际情况填写)'
         required: true
-        default: 'android-13.0' # <--- 预设为 Android 13 对应的分支
+        default: 'android-13.0'
       DEVICE_PATH:
-        description: '指定您的设备路径 (例如：device/oneplus/ace)'
+        description: '指定您的设备路径 (一加 13 推测为 device/oplus/bambool)'
         required: true
-        default: 'device/oplus/device_codename' # <--- ！！！请手动修改为您设备的真实路径！！！
+        default: 'device/oplus/bambool' # <--- 针对一加 13 的预设值
       DEVICE_NAME:
-        description: '指定您的设备代号 (例如：ace)'
+        description: '指定您的设备代号 (一加 13 推测为 bambool)'
         required: true
-        default: 'device_codename' # <--- ！！！请手动修改为您设备的真实代号！！！
+        default: 'bambool' # <--- 针对一加 13 的预设值
       BUILD_TARGET:
         description: '指定您的构建目标'
         required: true
@@ -70,32 +69,32 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Checkout
+    - name: 🚀 检出代码
       uses: actions/checkout@v5
               
-    - name: Clean-up
+    - name: 🧹 清理环境
       uses: rokibhasansagar/slimhub_actions@main
 
-    - name: Swap Space
+    - name: 💽 设置 Swap 空间
       uses: pierotofy/set-swap-space@master
       with:
         swap-size-gb: 12
       
-    - name: Build Environment
+    - name: ⚙️ 配置构建环境
       run: |
         sudo apt install aria2 -y
         git clone https://gitlab.com/OrangeFox/misc/scripts.git -b master
         cd scripts
         sudo bash setup/android_build_env.sh
 
-    - name: Setup ccache
+    - name: 💾 设置 ccache 缓存
       uses: hendrikmuhs/ccache-action@v1.2
       if: inputs.USE_CCACHE
       with:
         max-size: "10G"
         key: ${{ runner.os }}-orangefox-${{ inputs.MANIFEST_BRANCH }}
       
-    - name: Set-up Manifest
+    - name: 📥 设置 OrangeFox 清单
       if: inputs.MANIFEST_BRANCH == '12.1'
       run: |
         mkdir -p ${GITHUB_WORKSPACE}/OrangeFox
@@ -106,7 +105,7 @@ jobs:
         cd sync
         ./orangefox_sync.sh --branch ${{ inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
 
-    - name: Clone Android13+ Dependencies For 12.1 Branch
+    - name: 🔗 克隆 Android13+ 依赖 (针对 12.1 分支)
       if: inputs.MANIFEST_BRANCH == '12.1'
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
@@ -118,37 +117,32 @@ jobs:
         repo sync
         mv ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery-ofrp ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery
 
-    - name: Patching the Source Code
+    - name: 🩹 修补源代码
       if: inputs.MANIFEST_BRANCH == '12.1'
       run: |
-        # 移除原先针对 xiaomi_mondrian 的特定补丁，因为该项目可能不需要
-        # cd ${GITHUB_WORKSPACE}
-        # git clone https://github.com/ymdzq/scripts of_patch
-        # cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/bootable/recovery
-        # git fetch https://github.com/ymdzq/OrangeFox_Recovery fox_12.1 && git cherry-pick 4f65c9bd..7edc2281
         echo "跳过默认的源码补丁，依赖设备树自行处理。"
 
-    - name: Clone Device Tree
+    - name: 🌲 克隆设备树
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
         git clone ${{ inputs.DEVICE_TREE }} -b ${{ inputs.DEVICE_TREE_BRANCH }} ./${{ inputs.DEVICE_PATH }}
         cd ${{ inputs.DEVICE_PATH }}
         echo "COMMIT_ID=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-    - name: Update OrangeFox Built-in Magisk
+    - name: ⚡️ 更新内置 Magisk (APK)
       run: |
         git clone https://github.com/ymdzq/twrp_prebuilt ~/twrp_prebuilt
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/${{ inputs.DEVICE_PATH }}
         if ! grep -q 'FOX_USE_SPECIFIC_MAGISK_ZIP' vendorsetup.sh; then (echo 'export FOX_USE_SPECIFIC_MAGISK_ZIP=~/twrp_prebuilt/Magisk/${{ inputs.MAGISK_VERSION }}.apk'>>vendorsetup.sh && echo "Added FOX_USE_SPECIFIC_MAGISK_ZIP in vendorsetup.sh"); else sed -i 's/.*export FOX_USE_SPECIFIC_MAGISK_ZIP.*/export FOX_USE_SPECIFIC_MAGISK_ZIP=\~\/twrp_prebuilt\/Magisk\/${{ inputs.MAGISK_VERSION }}.apk/' vendorsetup.sh; fi
 
-    - name: Update OrangeFox Built-in magiskboot
+    - name: 🛠️ 更新内置 magiskboot 工具
       run: |
         git clone https://github.com/magojohnji/magiskboot-linux ~/magiskboot-linux
         cp -f ~/magiskboot-linux/armeabi-v7a/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/prebuilt/arm/magiskboot_updated"
         cp -f ~/magiskboot-linux/arm64-v8a/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/prebuilt/arm64/magiskboot_updated"
-        cp -f ~/magiskboot-linux/x86_64/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/tools/magiskboot"
+        cp -f ~/magojohnji/magiskboot-linux/x86_64/magiskboot "${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/vendor/recovery/tools/magiskboot"
 
-    - name: Building OrangeFox
+    - name: 🏗️ 构建 OrangeFox
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
         set +e
@@ -163,7 +157,7 @@ jobs:
         set -e
         lunch twrp_${{ inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image -j$(nproc --all)
 
-    - name: Set Release Properties
+    - name: 🏷️ 设置 Release 属性
       run: |
         echo "BUILD_DATE=$(TZ=Asia/Shanghai date +%Y%m%d)" >> $GITHUB_ENV
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
@@ -174,7 +168,7 @@ jobs:
         fi
         echo "DEVICE_TREE_URL=${DEVICE_TREE_URL}" >> $GITHUB_ENV
 
-    - name: Upload to Release
+    - name: 📤 上传到 Release
       uses: softprops/action-gh-release@master
       with:
         files: |
