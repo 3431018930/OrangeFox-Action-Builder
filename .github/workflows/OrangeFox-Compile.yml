@@ -3,7 +3,7 @@
 # 名称: OrangeFox 恢复模式构建 (OrangeFox - Build)
 name: OrangeFox - Build
 
-# 致谢 (Credits to):
+# Credits to:
 # https://github.com/TeamWin
 # https://gitlab.com/OrangeFox
 # https://github.com/azwhikaru for Recovery Builder Template
@@ -21,21 +21,21 @@ on:
         options:
         - 12.1
       DEVICE_TREE:
-        description: 'OrangeFox 设备树仓库 (已预设为您的项目)'
+        description: 'OrangeFox 设备树仓库 (已预设为您的项目地址)'
         required: true
         default: 'https://github.com/3431018930/oplus_13-orangefox_cn'
       DEVICE_TREE_BRANCH:
-        description: 'OrangeFox 设备树分支'
+        description: 'OrangeFox 设备树分支 (修正为 main)'
         required: true
-        default: 'android-13.0' # 建议使用您仓库中的实际分支名
+        default: 'main' # 修正：使用最常见的主分支名
       DEVICE_PATH:
         description: '指定您的设备路径 (一加 13 代号 PJZ110)'
         required: true
-        default: 'device/oplus/PJZ110' # 根据您的仓库结构修正
+        default: 'device/oplus/PJZ110' # 修正：基于 PJZ110 代号的标准路径
       DEVICE_NAME:
         description: '指定您的设备代号 (一加 13 代号 PJZ110)'
         required: true
-        default: 'PJZ110' # 根据您的仓库文件修正
+        default: 'PJZ110' # 修正：基于 twrp_PJZ110.mk 文件名
       BUILD_TARGET:
         description: '指定您的构建目标'
         required: true
